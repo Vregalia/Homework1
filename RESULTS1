@@ -1,7 +1,7 @@
 Homework1
 =========
 
---------------------------------------------------METHOD---------------------------------------------------
+-------------------------------------------------- METHOD 1 ---------------------------------------------------
 
 IN THE SHELL:
 
@@ -11,17 +11,17 @@ IN R:
 
 I read all 6 vectors of arrival delays into R. I got the mean, standard deviation, and median for each block. I then took the weighted mean over the 6 different blocks for each of these to get my final estimates.
 
-----------------------------------------------ESTIMATES----------------------------------------------------
+---------------------------------------------- estimates ----------------------------------------------------
 
 Mean: 6.1171698
 Median: -1.283408
 Standard Deviation: 30.834866
 
------------------------------------------------FILES-------------------------------------------------------
+----------------------------------------------- files -------------------------------------------------------
 
 I used all csv files except for 2002.csv, since I was having an issue with the "illegal byte sequence" error for that year. 
 
-------------------------------------------------CODE--------------------------------------------------------
+------------------------------------------------ code --------------------------------------------------------
 
 arr1 = as.numeric(readLines("arr1"))
 arr2 = as.numeric(readLines("arr2"))
@@ -66,7 +66,151 @@ median6 = median(arr6, na.rm = TRUE)
 median.main = weighted.mean(c(median1, median2, median3, median4, median5, median6), lengths)
 
 
-----------------------------------------------TIME--------------------------------------------------
+---------------------------------------------- time --------------------------------------------------
 
 Unfortunately, I did not compute the run time when I did this, however my estimate would be that the whole run time took 20 minutes. (Plus 20 minutes for the shell commands) 
+
+
+
+
+----------------------------------------------------------------------------------------------------
+---------------------------------------------- METHOD 2 --------------------------------------------
+
+IN THE SHELL:
+
+I used SQLite3 in the shell to create a database named "airdelays", which contains the table "delays" with the variable "f1". 
+
+IN R:
+
+I used the package "RSQLite" in R to access the "airdelays" database. I used SQL commands to attain the mean. Unfortunately, I did not have time to figure out a way to attain the standard deviation. I wrote code to find the median, but it froze R on my computer whenever I tried it. 
+
+
+------------------------------------------- estimates ---------------------------------------------
+
+Mean: 6.0758871710055
+Median: n/a
+Standard Deviation: n/a
+
+
+------------------------------------------- files ---------------------------------------------------
+
+I used every single file given in the zip file.
+
+
+---------------------------------------------- code ----------------------------------------------
+
+install.packages("RMySQL")
+
+library(RMySQL)
+library(RSQLite)
+
+drv = dbDriver("SQLite")
+delays = dbConnect(drv, "airdelays")
+dbListTables(delays)
+
+sqlmean = dbGetQuery(delays, "SELECT AVG(f1) FROM delays;")
+
+
+length = dbGetQuery(delays, "SELECT LENGTH(f1) FROM delays;")
+
+sqlmedian = dbGetQuery(delays, "SELECT f1 FROM delays ORDER BY f1 ASC LIMIT 1 OFFSET 65023428;" ) #DIDN'T WORK - RAN FOR HOURS
+
+results3 = list(time = time, results = c(mean = 6.0758871710055, median = "n/a", sd = "n/a"),
+               system = Sys.info(),  session = sessionInfo(), time.estimated = "2 hours")
+
+save(results3, file = "results3.rda")
+
+------------------------------------------------ time ----------------------------------------------------
+
+I didn't run a system.time check, but this entire process (including time in the shell making the databse) took approximately 2 hours.
+
+
+----------------------------------------------------------------------------------------------------
+------------------------------------------------ Method 3 ------------------------------------------
+
+IN R:
+
+I looped over every single CSV file, and plugged them into a function I wrote that takes the mean, standard deviation, and the median of the given file. I saved the 3 results from each file into a vectors, and then took the weighted means of each to get an appropriate estimate. 
+
+------------------------------------------------ estimates -----------------------------------------
+
+Mean = 4.081772
+Median = -3.54321
+Standard Deviation = 33.4887
+
+----------------------------------------------- files -----------------------------------------------
+
+I used every CSV file given.
+
+------------------------------------------------ code -----------------------------------------------
+
+filenames = c("1987.csv", "1988.csv", "1989.csv", "1990.csv", "1991.csv", "1992.csv", "1993.csv", "1994.csv", "1995.csv", "1996.csv", "1997.csv", "1998.csv", "1999.csv", "2000.csv", "2001.csv", "2002.csv", "2003.csv", "2004.csv", "2005.csv", "2006.csv", "2007.csv", "2008_January.csv", "2008_February.csv", "2008_March.csv", "2008_April.csv", "2008_May.csv", "2008_June.csv", "2008_July.csv", "2008_August.csv", "2008_September.csv", "2008_October.csv", "2008_November.csv", "2008_December.csv", "2009_January.csv", "2009_February.csv", "2009_March.csv", "2009_April.csv", "2009_May.csv", "2009_June.csv", "2009_July.csv", "2009_August.csv", "2009_September.csv", "2009_October.csv", "2009_November.csv", "2009_December.csv", "2010_January.csv", "2010_February.csv", "2010_March.csv", "2010_April.csv", "2010_May.csv", "2010_June.csv", "2010_July.csv", "2010_August.csv", "2010_September.csv", "2010_October.csv", "2010_November.csv", "2010_December.csv", "2011_January.csv", "2011_February.csv", "2011_March.csv", "2011_April.csv", "2011_May.csv", "2011_June.csv", "2011_July.csv", "2011_August.csv", "2011_September.csv", "2011_October.csv", "2011_November.csv", "2011_December.csv", "2012_January.csv", "2012_February.csv", "2012_March.csv", "2012_April.csv", "2012_May.csv", "2012_June.csv", "2012_July.csv", "2012_August.csv", "2012_September.csv", "2012_October.csv", "2012_November.csv", "2012_December.csv")
+
+means = numeric(81)
+sds = numeric(81)
+medians = numeric(81)
+
+for(i in 1:21){
+  
+  k = func1(read.csv(filenames[i]))
+  means[i] = k[[1]]
+  sds[i] = k[[2]]
+  medians[i] = k[[3]]
+  
+}
+
+for(i in 22:81){
+  
+  k = func2(read.csv(filenames[i]))
+  means[i] = k[[1]]
+  sds[i] = k[[2]]
+  medians[i] = k[[3]]
+  
+}
+
+lengths = sapply(means, length)
+
+avg = weighted.mean(means, lengths)
+
+stdev = weighted.mean(sds, lengths)
+
+median.est = weighted.mean(medians, lengths)
+
+results2 = list(time = time, results = c(mean = 4.081772, median = -3.54321, sd = 33.4887),
+               system = Sys.info(),  session = sessionInfo(), time.estimated = "3 hours")
+
+save(results2, file = "results3.rda")
+
+
+
+func1 = function(df){
+  delay = as.numeric(df$ArrDelay)
+  
+  avg = mean(delay, na.rm = TRUE)
+  stdev = sd(delay, na.rm = TRUE)
+  median.est = median(delay, na.rm = TRUE)
+  
+  return(list(avg, stdev, median.est))
+  
+}
+
+func2 = function(df){
+  delay = as.numeric(df$ARR_DELAY)
+  
+  avg = mean(delay, na.rm = TRUE)
+  stdev = sd(delay, na.rm = TRUE)
+  median.est = median(delay, na.rm = TRUE)
+  
+  return(list(avg, stdev, median.est))
+  
+}
+
+
+--------------------------------------------------- time --------------------------------------------
+
+This method took me approximately 3 hours.
+
+
+
+
 
